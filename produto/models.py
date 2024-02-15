@@ -15,6 +15,7 @@ class Produto(models.Model):
     slug = models.SlugField(unique=True, blank=True, null=True)
     preco_marketing = models.FloatField(verbose_name='Preço', blank=True, null=True)
     preco_marketing_promocional = models.FloatField(default=0, verbose_name='Preço Promo', blank=True, null=True)
+    estoque = models.PositiveIntegerField(default=1, blank=True, null=True)
     tipo = models.CharField(
         default = 'V',
         max_length = 1,
