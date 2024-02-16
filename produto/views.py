@@ -33,12 +33,11 @@ class AdicionarAoCarrinho(View):
         variacao_id = self.request.GET.get('vid')
         produto_id = self.request.GET.get('vid2')
         
+        
 
         if produto_id:
-            
-            produto = get_object_or_404(models.Produto, id=produto_id)
 
-            produto_id = produto.id
+            produto = get_object_or_404(models.Produto, id=produto_id)
             produto_nome = produto.nome
             preco_unitario = produto.preco_marketing
             preco_unitario_promocional = produto.preco_marketing_promocional
@@ -60,8 +59,10 @@ class AdicionarAoCarrinho(View):
 
             carrinho = self.request.session['carrinho']
 
-            if f'{produto_id}' in list(carrinho.keys()):
-                quantidade_carrinho = carrinho[f'{produto_id}']['quantidade']
+            
+
+            if produto_id in list(carrinho.keys()):
+                quantidade_carrinho = carrinho[produto_id]['quantidade']
                 quantidade_carrinho += 1
 
                 if produto.estoque < quantidade_carrinho:
@@ -69,9 +70,9 @@ class AdicionarAoCarrinho(View):
                     return redirect(f'/{slug}')
 
 
-                carrinho[f'{produto_id}']['quantidade'] = quantidade_carrinho
-                carrinho[f'{produto_id}']['preco_quantitativo'] = preco_unitario * quantidade_carrinho
-                carrinho[f'{produto_id}']['preco_quantitativo_promocional'] = preco_unitario_promocional * quantidade_carrinho
+                carrinho[produto_id]['quantidade'] = quantidade_carrinho
+                carrinho[produto_id]['preco_quantitativo'] = preco_unitario * quantidade_carrinho
+                carrinho[produto_id]['preco_quantitativo_promocional'] = preco_unitario_promocional * quantidade_carrinho
 
 
             else:
@@ -86,7 +87,9 @@ class AdicionarAoCarrinho(View):
                     'slug' : slug,
                     'imagem' : imagem,
                 }
+
             self.request.session.save()
+            
             messages.success(self.request, f'Produto {produto_nome} adicionado ao seu carrinho')
             return redirect(http_referer)
 
@@ -99,7 +102,9 @@ class AdicionarAoCarrinho(View):
             messages.error(self.request, 'Produto não existe')
             return redirect(http_referer)
 
+        
         variacao = get_object_or_404(models.Variacao, id=variacao_id)
+        variacao_id = f'1-{variacao_id}'
         variacao_estoque = variacao.estoque
         produto = variacao.produto
 
@@ -208,6 +213,6 @@ class Carrinho(View):
         return render(self.request, 'produto/carrinho.html', context) 
 
 
-class Finalizar(View):
+class ResumoDaCompra(View):
     def get(self, *args, **kwargs):
         return HttpResponse('Finalizar')
