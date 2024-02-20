@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load omfilters %}
 
+{% block titulo %}Carrinho |{% endblock titulo %}
 
 {% block conteudo %}
 
@@ -9,7 +10,7 @@
     <div class="row mt-3">
         <div class="col">
             <h3>Carrinho de compras</h3>
-            <p class="lead">Os produtos, quantidades e preços que você escolheu. {{carrinho.values}}</p>
+            <p class="lead">Os produtos, quantidades e preços que você escolheu.</p>
 
             {% include "parciais/_carrinho.html" %}
         </div>

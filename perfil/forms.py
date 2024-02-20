@@ -14,21 +14,21 @@ class UserForm(forms.ModelForm):
         required=False,
         widget=forms.PasswordInput(),
         label='Senha',
-        help_text='Usuários que desejam atualizar seus dados podem deixar o campo de Senha em branco.'
+        help_text='Caso esteja logado e não queira atualizar sua senha, poderá deixá-la em branco.'
     )
 
     password2 = forms.CharField(
         required=False,
         widget=forms.PasswordInput(),
         label='Confirmação da senha',
-        help_text='Usuários que desejam atualizar seus dados podem deixar o campo de Senha em branco.'
+        help_text='Caso esteja logado e não queira atualizar sua senha, poderá deixá-la em branco.'
     )
 
     def __init__(self, usuario=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.usuario = usuario
-
+    
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'username', 'password', 'password2', 'email')
@@ -39,8 +39,13 @@ class UserForm(forms.ModelForm):
         validation_error_msgs = {}
 
         usuario_data = data['username']
-        password_data = data['password']
-        password2_data = data['password2']
+
+        if usuario_data == 'AnonymousUser':
+            password_data = data['password3']
+            password2_data = data['password4']
+        else:
+            password_data = data['password']
+            password2_data = data['password2']
         email_data = data['email']
 
         # poderia fazer também da seguinte forma:
@@ -76,6 +81,7 @@ class UserForm(forms.ModelForm):
 
         # Usuários não logados: cadastro
         else:
+            
             if usuario_db:
                 validation_error_msgs['username'] = error_msg_user_exists
 

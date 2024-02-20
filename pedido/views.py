@@ -1,5 +1,8 @@
-from django.shortcuts import render, redirect
-from django.views.generic import ListView
+from typing import Any
+from django.db.models.query import QuerySet
+from django.http.request import HttpRequest as HttpRequest
+from django.shortcuts import render, redirect, reverse
+from django.views.generic import ListView, DetailView
 from django.views import View
 from django.http import HttpResponse
 from django.contrib import messages
@@ -9,10 +12,24 @@ from produto.models import Variacao, Produto
 from .models import Pedido, ItemPedido
 
 # Create your views here.
-class PagarPedido(View):
-    def get(self, *args, **kwargs):
-        return HttpResponse('PAGAR')
 
+class DispatchLoginRequiredMixin(View):
+    def dispatch(self, *args: Any, **kwargs: Any):
+        if not self.request.user.is_authenticated:
+            return redirect('perfil:criar')
+        return super().dispatch(*args, **kwargs)
+    
+    def get_queryset(self, *args, **kwargs):
+        qs = super().get_queryset(*args, **kwargs)
+        qs = qs.filter(usuario=self.request.user)
+        return qs
+
+
+class PagarPedido(DispatchLoginRequiredMixin, DetailView):
+    template_name = 'pedido/pagar.html'
+    model = Pedido
+    pk_url_kwarg = 'pk'
+    context_obj_name = 'pedido'
 
 class SalvarPedido(View):
     template_name = 'pedido/pagar.html'
@@ -95,9 +112,6 @@ class SalvarPedido(View):
         
         pedido.save()
 
-        for v in carrinho.values():
-            print(v["produto_nome"])
-
         for k in carrinho.keys():
             if str(k).startswith('1-'):
                 ItemPedido.objects.bulk_create(
@@ -134,12 +148,24 @@ class SalvarPedido(View):
                 )
 
         del self.request.session['carrinho']
-        return redirect('pedido:lista')
+        return redirect(
+            reverse(
+                'pedido:pagar',
+                kwargs={
+                    'pk':pedido.pk
+                }
+            )
+            )
 
-class DetalhesPedido(View):
-    def get(self, *args, **kwargs):
-        return HttpResponse('DetalhesPedido')
+class DetalhesPedido(DispatchLoginRequiredMixin, DetailView):
+    model = Pedido
+    context_object_name = 'pedido'
+    template_name = 'pedido/detalhe.html'
+    pk_url_kwarg = 'pk'
     
-class Lista(View):
-    def get(self, *args, **kwargs):
-        return HttpResponse('Lista')
+class Lista(DispatchLoginRequiredMixin, ListView):
+    model = Pedido
+    context_object_name = 'pedidos'
+    template_name = 'pedido/lista.html'
+    paginate_by = 10
+    ordering = ['-id']

@@ -6,7 +6,6 @@ from django.http import HttpResponse
 from django.contrib import messages
 from . import models
 from perfil.models import Perfil
-from pprint import pprint
 
 # Create your views here.
 
@@ -15,6 +14,7 @@ class ListaProdutos(ListView):
     template_name = 'produto/lista.html'
     context_object_name = 'produtos'
     paginate_by = 5
+    ordering = ['-id']
 
 
 class DetalheProduto(DetailView):
