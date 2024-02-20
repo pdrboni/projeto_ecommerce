@@ -5,6 +5,7 @@ from django.views import View
 from django.http import HttpResponse
 from django.contrib import messages
 from . import models
+from perfil.models import Perfil
 from pprint import pprint
 
 # Create your views here.
@@ -197,9 +198,17 @@ class RemoverDoCarrinho(View):
             'carrinho': self.request.session.get('carrinho', {})
             }
 
-            messages.success(self.request, f'Produto {carrinho["produto_nome"]} removido ao seu carrinho')
             del self.request.session['carrinho'][produto_id]
             self.request.session.save()
+
+            if not self.request.session.get('carrinho'):
+                messages.error(
+                    self.request,
+                    'Carrinho vazio.'
+                )
+                return redirect('produto:lista')
+
+            messages.success(self.request, f'Produto {carrinho["produto_nome"]} removido ao seu carrinho')
             return render(self.request, 'produto/carrinho.html', context)
         
 
@@ -215,14 +224,23 @@ class Carrinho(View):
 
 class ResumoDaCompra(View):
     def get(self, *args, **kwargs):
-
         if not self.request.user.is_authenticated:
-            messages.error(self.request, 'Você deve estar logado para finalizar a compra')
             return redirect('perfil:criar')
 
+        perfil = Perfil.objects.filter(usuario=self.request.user).exists()
+
+        if not perfil:
+            messages.error(
+                self.request,
+                'Usuário sem perfil. Atualize seus dados.'
+            )
+            return redirect('perfil:criar')
+
+
+
         contexto = {
-            'usuario' : self.request.user,
-            'carrinho' : self.request.session['carrinho']
+            'usuario': self.request.user,
+            'carrinho': self.request.session['carrinho'],
         }
 
         return render(self.request, 'produto/resumodacompra.html', contexto)

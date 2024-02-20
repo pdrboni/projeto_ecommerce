@@ -1,17 +1,145 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import ListView
 from django.views import View
 from django.http import HttpResponse
+from django.contrib import messages
+from uteis import utils
+
+from produto.models import Variacao, Produto
+from .models import Pedido, ItemPedido
 
 # Create your views here.
 class PagarPedido(View):
     def get(self, *args, **kwargs):
-        return HttpResponse('PagarPedido')
+        return HttpResponse('PAGAR')
+
 
 class SalvarPedido(View):
+    template_name = 'pedido/pagar.html'
+    
+
     def get(self, *args, **kwargs):
-        return HttpResponse('FecharPedido')
+        if not self.request.user.is_authenticated:
+            messages.error(self.request, 'Você precisa estar logado para finalizar a compra')
+            return redirect('perfil:criar')
+        
+        if not self.request.session.get('carrinho'):
+            messages.error(self.request, 'Carrinho vazio.')
+            return redirect('produto:lista')
+        
+        carrinho = self.request.session.get('carrinho')
+
+        carrinho_produtos_ids = [p if not p.startswith('1-') else None for p in carrinho ]
+        carrinho_variacao_ids = [v[2:] if v.startswith('1-') else None for v in carrinho if v is not None ]
+        bd_produtos = list(
+            Produto.objects.filter(id__in=carrinho_produtos_ids)
+        )
+        bd_variacao = list(
+            Variacao.objects.filter(id__in=carrinho_variacao_ids)
+        )
+        
+
+        for variacao in bd_variacao:
+            vid = f'1-{variacao.id}'
+            estoque = variacao.estoque
+
+            qtd_carrinho = carrinho[vid]['quantidade']
+            preco_unt = carrinho[vid]['preco_unitario']
+            preco_unt_promo = carrinho[vid]['preco_unitario_promocional']
+
+            error_msg_estoque = ''
+
+            if estoque < qtd_carrinho:
+                carrinho[vid]['quantidade'] = estoque
+                carrinho[vid]['preco_quantitativo'] = estoque * preco_unt
+                carrinho[vid]['preco_quantitativo_promocional'] = estoque * preco_unt_promo
+
+                error_msg_estoque = f'O produto {carrinho[vid]["produto_nome"]} {carrinho[vid]["variacao_nome"]} ultrapassou nosso estoque. Ajustamos as quantiades destes produtos no seu carrinho para a quantidade disponível em estoque.'
+
+            if error_msg_estoque:
+                messages.error(self.request, error_msg_estoque)
+                self.request.session.save()
+                return redirect('produto:carrinho')
+            
+        for produto in bd_produtos:
+            pid = str(produto.id)
+            estoque = produto.estoque
+
+            qtd_carrinho = carrinho[pid]['quantidade']
+            preco_unt = carrinho[pid]['preco_unitario']
+            preco_unt_promo = carrinho[pid]['preco_unitario_promocional']
+
+            error_msg_estoque = ''
+
+            if estoque < qtd_carrinho:
+                carrinho[pid]['quantidade'] = estoque
+                carrinho[pid]['preco_quantitativo'] = estoque * preco_unt
+                carrinho[pid]['preco_quantitativo_promocional'] = estoque * preco_unt_promo
+
+                error_msg_estoque = f'O produto {carrinho[pid]["produto_nome"]} ultrapassou nosso estoque. Ajustamos as quantiades destes produtos no seu carrinho para a quantidade disponível em estoque.'
+
+            if error_msg_estoque:
+                messages.error(self.request, error_msg_estoque)
+                self.request.session.save()
+                return redirect('produto:carrinho')
+
+        qtd_total_carrinho = utils.cart_total_qtd(carrinho)
+        valor_total_carrinho = utils.cart_totals(carrinho)
+
+        pedido = Pedido(
+            usuario=self.request.user,
+            total=valor_total_carrinho,
+            status='C',
+            qtd_total=qtd_total_carrinho,
+            )
+        
+        pedido.save()
+
+        for v in carrinho.values():
+            print(v["produto_nome"])
+
+        for k in carrinho.keys():
+            if str(k).startswith('1-'):
+                ItemPedido.objects.bulk_create(
+                    [
+                        ItemPedido(
+                            pedido=pedido,
+                            produto=carrinho[k]['produto_nome'],
+                            produto_id=carrinho[k]['produto_id'],
+                            variacao=carrinho[k]['variacao_nome'],
+                            variacao_id=carrinho[k]['variacao_id'],
+                            preco=carrinho[k]['preco_quantitativo'],
+                            preco_promocional=carrinho[k]['preco_quantitativo_promocional'],
+                            quantidade=carrinho[k]['quantidade'],
+                            imagem=carrinho[k]['imagem'],
+                        )
+                            
+                    ]
+                )
+
+            else:
+                ItemPedido.objects.bulk_create(
+                    [
+                        ItemPedido(
+                            pedido=pedido,
+                            produto=carrinho[k]['produto_nome'],
+                            produto_id=carrinho[k]['produto_id'],
+                            preco=carrinho[k]['preco_quantitativo'],
+                            preco_promocional=carrinho[k]['preco_quantitativo_promocional'],
+                            quantidade=carrinho[k]['quantidade'],
+                            imagem=carrinho[k]['imagem'],
+                        )
+                            
+                    ]
+                )
+
+        del self.request.session['carrinho']
+        return redirect('pedido:lista')
 
 class DetalhesPedido(View):
     def get(self, *args, **kwargs):
         return HttpResponse('DetalhesPedido')
+    
+class Lista(View):
+    def get(self, *args, **kwargs):
+        return HttpResponse('Lista')

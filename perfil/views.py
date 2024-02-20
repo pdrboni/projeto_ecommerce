@@ -78,10 +78,9 @@ class Criar(BasePerfil):
         if self.request.user.is_authenticated:
             usuario = get_object_or_404(User, username=self.request.user.username)
             usuario.username = username
-            print(model_to_dict(models.User.objects.get(id=self.request.user.pk), exclude='id' 'password' 'password2' 'last_login' 'is_superuser' 'groups' 'user_permissions' 'is_staff' 'date_joined' 'is_active'))
             keys_to_exclude = ['password', 'password2']
             filtered_dict = {key: value for key, value in self.userform.cleaned_data.items() if key not in keys_to_exclude}
-            print(filtered_dict)
+            
         
             if password:
                 if not check_password(password, usuario.password):
