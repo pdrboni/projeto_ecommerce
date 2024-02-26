@@ -1,11 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import User
+from cupom import models as cupom
 
 # Create your models here.
 class Pedido(models.Model):
     usuario = models.ForeignKey(User, on_delete = models.CASCADE)
     total = models.FloatField()
     qtd_total = models.PositiveIntegerField()
+    cupom_aplicado = models.ForeignKey(cupom.Cupom,on_delete = models.DO_NOTHING, blank=True, null=True)
     status = models.CharField(
         default = 'C',
         max_length = 1,

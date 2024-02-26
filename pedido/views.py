@@ -7,9 +7,12 @@ from django.views import View
 from django.http import HttpResponse
 from django.contrib import messages
 from uteis import utils
+import requests
 
+from cupom.models import Cupom
 from produto.models import Variacao, Produto
 from .models import Pedido, ItemPedido
+from perfil.models import Perfil
 
 # Create your views here.
 
@@ -99,15 +102,26 @@ class SalvarPedido(View):
                 messages.error(self.request, error_msg_estoque)
                 self.request.session.save()
                 return redirect('produto:carrinho')
+        
+        if self.request.session.get('cupom'):
+            cupom = self.request.session.get('cupom')
+            cupom_list = list(cupom.values())[0]
+            cupom_name = cupom_list['cupom_name']
+            cupom_de_desc = Cupom.objects.get(name=cupom_name)
+            
+        frete = self.request.session.get('frete')
 
         qtd_total_carrinho = utils.cart_total_qtd(carrinho)
         valor_total_carrinho = utils.cart_totals(carrinho)
+        valor_total_carrinho_mais_frete = valor_total_carrinho + frete
+        valor_total_carrinho_mais_frete_desconto = valor_total_carrinho_mais_frete - valor_total_carrinho_mais_frete*cupom_de_desc.desconto
 
         pedido = Pedido(
             usuario=self.request.user,
-            total=valor_total_carrinho,
+            total=valor_total_carrinho_mais_frete_desconto,
             status='C',
             qtd_total=qtd_total_carrinho,
+            cupom_aplicado=cupom_de_desc or None
             )
         
         pedido.save()
@@ -146,7 +160,7 @@ class SalvarPedido(View):
                             
                     ]
                 )
-
+        del self.request.session['frete']
         del self.request.session['carrinho']
         return redirect(
             reverse(

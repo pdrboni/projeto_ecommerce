@@ -25,9 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-#0)^486l&uazabiuy_+pmyrdm-)p+m&*+_u4+@0!5%*k!ein_9'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'perfil',
     'produto',
     'pedido',
+    'cupom',
     'crispy_forms',
     'crispy_bootstrap4',
 ]

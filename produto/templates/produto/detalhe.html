@@ -22,7 +22,7 @@
                 <div class="form-group">
                     {% if produto.variacao_set.all %}
                         <select id="select-variacoes" name="vid" class="form-control form-control-lg">
-                                <option value="" disabled selected>Escolha uma opção</option>
+                            <option value="" disabled selected>Escolha uma opção</option>
                             
                             {% for variacao in produto.variacao_set.all %}
 
@@ -54,7 +54,6 @@
                     </select>
                     {% endif %}
                 </div>
-
 
 
                 <div class="text-left">

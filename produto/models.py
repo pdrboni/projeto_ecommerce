@@ -17,6 +17,10 @@ class Produto(models.Model):
     preco_marketing_promocional = models.FloatField(
         default=0, verbose_name='Preço Promo.')
     estoque = models.PositiveIntegerField(blank=True, null=True, default=1)
+    profundidade = models.FloatField(verbose_name='Profundidade (cm)')
+    largura = models.FloatField(verbose_name='Largura (cm)')
+    altura = models.FloatField(verbose_name='Altura (cm)')
+    peso = models.FloatField(verbose_name='Peso (kg)')
     tipo = models.CharField(
         default='V',
         max_length=1,

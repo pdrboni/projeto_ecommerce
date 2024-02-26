@@ -26,7 +26,23 @@
                 <table class="table">
                     <tr>
                         <td class="font-weight-bold">Total</td>
-                        <td>{{carrinho|cart_totals|formata_preco}}</td>
+                        <td>{{carrinho|cart_totals|formata_preco}} + {{frete|formata_preco}} (Frete) = {{carrinho|cart_totals_mais_frete:frete}}</td>
+                    </tr>
+                    <tr>
+                        <td> </td>
+                        {% if cupom %}<td style='color:darkgreen'>{{carrinho|cart_totals_mais_frete:frete}} -{{desconto}}% = {{total_com_desconto|formata_preco}}</td>{% endif %}
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold">Cupom de desconto</td>
+                        <td>
+                            <form method="get" action="{% url 'cupom:cupom' %}">
+                                <input type="text" name="cupom" id="cupom">
+                                <button type="submit">Aplicar cupom</button>
+                                {% if cupom %}<span>Aplicado cupom {{cupom}}</span>
+                                <a class="ml-3" href="{% url "cupom:removercupom" %}">
+                                <i class="fa-times-circle text-danger" aria-hidden="true">remover</i>{% endif %}
+                            </form>
+                        </td>
                     </tr>
                 </table>
             </div>
